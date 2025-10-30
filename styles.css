@@ -165,9 +165,9 @@ button {
 }
 
 #jump-power-bar {
-    width: 50%;
+    width: 100%;
     height: 100%;
     background-color: #e0fbfc;
-    transform-origin: center;
+    transform-origin: left;
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
