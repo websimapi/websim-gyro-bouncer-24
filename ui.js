@@ -75,15 +75,14 @@ export function updateScore(score) {
     scoreEl.textContent = score;
 }
 
-export function updateJumpIndicator(flickSpeed) {
+export function updateJumpIndicator(power) {
     if (!jumpPowerBar) return;
-    const normalizedFlick = Math.min(Math.max(flickSpeed, -500), 500) / 500; // -1 to 1
-    const scale = 1 + Math.abs(normalizedFlick);
-    const translateX = normalizedFlick * 50; // Move it a bit based on flick
+    const normalizedPower = Math.min(Math.max(power, 0), 1); // Clamp power between 0 and 1
 
-    jumpPowerBar.style.transform = `translateX(${translateX}%) scaleX(${scale})`;
+    jumpPowerBar.style.transform = `scaleX(${normalizedPower})`;
+    jumpPowerBar.style.transformOrigin = 'left'; // Animate from the left
 
-    if (flickSpeed > 100) {
+    if (power > 0.75) {
         jumpPowerBar.style.backgroundColor = '#ee6c4d'; // Power jump color
     } else {
         jumpPowerBar.style.backgroundColor = '#e0fbfc'; // Normal color

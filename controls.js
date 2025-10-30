@@ -1,6 +1,7 @@
 export class Controls {
     constructor() {
         this.tilt = 0;
+        this.angle = { alpha: 0, beta: 0, gamma: 0 }; // Added to store full orientation
         this.rotationRate = { alpha: 0, beta: 0, gamma: 0 };
         this.isIOS = typeof DeviceOrientationEvent.requestPermission === 'function';
     }
@@ -11,6 +12,11 @@ export class Controls {
             let tiltLR = event.gamma;
             // Cap the tilt value for sensitivity control
             this.tilt = Math.max(-45, Math.min(45, tiltLR));
+            
+            // Store all angles
+            this.angle.beta = event.beta;
+            this.angle.gamma = event.gamma;
+            this.angle.alpha = event.alpha;
         });
 
         window.addEventListener('devicemotion', (event) => {
@@ -45,8 +51,11 @@ export class Controls {
         return this.tilt;
     }
 
+    getAngle() {
+        return this.angle;
+    }
+
     getRotationRate() {
         return this.rotationRate;
     }
 }
-

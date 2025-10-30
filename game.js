@@ -22,6 +22,7 @@ let lastTime = 0;
 let controls;
 let audioCtx;
 let bounceSoundBuffer;
+let jumpPower = 0; // Tracks the charge for a power jump (0 to 1)
 
 export async function preload(gameControls) {
     controls = gameControls;
@@ -98,22 +99,15 @@ function setupPhysics() {
                 if (playerBody.velocity.y > 1) {
                     playSound(bounceSoundBuffer);
 
-                    const rotationRate = controls.getRotationRate();
-                    const flickSpeed = rotationRate.beta || 0;
-
-                    const flickThreshold = 100; // degrees/sec
-                    let powerMultiplier = 1.0;
-
-                    if (flickSpeed > flickThreshold) {
-                        // Power Jump!
-                        const maxFlick = 500;
-                        const normalizedFlick = Math.min(flickSpeed, maxFlick);
-                        powerMultiplier = 1.2 + (normalizedFlick / maxFlick) * 1.3; // multiplier between 1.2 and 2.5
+                    // New jump logic based on charge
+                    const powerMultiplier = 0.5 + jumpPower * 2.0; // Ranges from 0.5x to 2.5x
+                    
+                    if (jumpPower > 0.5) {
                         UI.flashJumpIndicator();
-                    } else if (flickSpeed < -50) {
-                        // Dampen
-                        powerMultiplier = 0.5;
                     }
+                    
+                    // Reset power after using it for a jump
+                    jumpPower = 0;
 
                     // Apply an upward impulse for bounce control
                     const impulseMagnitude = playerBody.mass * 10 * powerMultiplier;
@@ -157,6 +151,7 @@ export async function init() {
     }
     
     score = 0;
+    jumpPower = 0;
     UI.updateScore(0);
     
     UI.showScreen('game');
@@ -169,9 +164,25 @@ export async function init() {
 function update(deltaTime) {
     player.update(controls.getTilt(), UI.canvas.width, deltaTime);
 
-    // Update Jump Indicator UI
-    const rotationRate = controls.getRotationRate();
-    UI.updateJumpIndicator(rotationRate.beta || 0);
+    // --- New Jump Power charging logic ---
+    const angle = controls.getAngle();
+    const BETA_UPRIGHT = 90;
+    // Use angle.beta, default to upright if not available yet
+    const currentBeta = angle.beta === null || angle.beta === undefined ? BETA_UPRIGHT : angle.beta;
+    
+    // Calculate forward tilt (0 when upright, increases as phone tilts forward)
+    const forwardTilt = Math.max(0, BETA_UPRIGHT - currentBeta);
+
+    if (forwardTilt > 10) { // Only charge if tilted more than 10 degrees forward
+        const chargeRate = 2; // Full charge in 0.5 seconds at max tilt
+        // Charge faster with more tilt
+        jumpPower = Math.min(1, jumpPower + (forwardTilt / 90) * chargeRate * deltaTime);
+    } else {
+        const drainRate = 1; // Drain completely in 1 second
+        jumpPower = Math.max(0, jumpPower - drainRate * deltaTime);
+    }
+    UI.updateJumpIndicator(jumpPower);
+    // --- End of new logic ---
 
     // Gravity inversion logic
     if (ground) {
